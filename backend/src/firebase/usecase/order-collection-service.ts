@@ -1,0 +1,30 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { CollectionReference } from '@google-cloud/firestore';
+import { OrderCollectionName } from '../firestore.providers';
+import { OrderDto, OrderStatus } from '../dto/order.dto';
+import { nanoid } from 'nanoid';
+
+@Injectable()
+export class OrderCollectionService {
+  // private logger: Logger = new Logger(RawReadingsService.name);
+
+  constructor(
+    @Inject(OrderCollectionName)
+    private orderCollection: CollectionReference<OrderDto>,
+  ) {}
+
+  async create(order: OrderDto): Promise<OrderDto> {
+    const orderId = nanoid(6);
+    const orderRef = this.orderCollection.doc(orderId);
+    order.orderId = orderId;
+    order.orderStatus = OrderStatus.WAIT_PAY
+    await orderRef.set(order);
+    return order;
+  }
+
+  async update(order: OrderDto): Promise<OrderDto> {
+    const orderRef = this.orderCollection.doc(order.orderId);
+    await orderRef.set(order);
+    return order;
+  }
+}
