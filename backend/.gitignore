@@ -33,3 +33,6 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+mango-483e3-firebase-adminsdk-grcwk-bb64da31b8.json
+package-lock.json
