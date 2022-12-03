@@ -31,4 +31,5 @@ export class OrderDto {
   rais: OrderRais[];
   isProblem: boolean;
   problem: string;
+  sss: string
 }
