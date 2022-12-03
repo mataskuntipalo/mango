@@ -29,12 +29,11 @@ export class OrderDto {
   //cycleID: string
   address: string;
   telephone: string;
-  orderDate: Date;
-  recevieDate: Date;
+  orderDate: string;
+  recevieDate: string;
   weight: number;
   totalPrice: number;
-  rais: OrderRais[];
-  isProblem: boolean;
-  problem: string;
-  sss: string
+  rais?: OrderRais[];
+  isProblem?: boolean;
+  problem?: string;
 }
