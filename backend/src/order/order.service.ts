@@ -7,13 +7,7 @@ import { PlanService } from 'src/plan/plan.service';
 export class OrderService {
   constructor(private planService: PlanService, private orderCollectionService: OrderCollectionService) {}
   async findRaiForOrder(order: OrderDto): Promise<any> {
-    const rais = await this.planService.findRai(order, false)
-    if(rais){
-        order.orderStatus = OrderStatus.CONFIRMED
-        order.rais = rais
-    }else{
-        order.orderStatus = OrderStatus.WAIT_CONFIRM
-    }
-    return this.orderCollectionService.update(order)
+    const orderUpdated = await this.planService.findRai(order, false)
+    return this.orderCollectionService.update(orderUpdated)
   }
 }

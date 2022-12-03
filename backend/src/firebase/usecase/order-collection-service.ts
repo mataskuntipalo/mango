@@ -18,6 +18,8 @@ export class OrderCollectionService {
     const orderRef = this.orderCollection.doc(orderId);
     order.orderId = orderId;
     order.orderStatus = OrderStatus.WAIT_PAY
+    order.isProblem = false;
+    order.problem = null;
     await orderRef.set(order);
     return order;
   }

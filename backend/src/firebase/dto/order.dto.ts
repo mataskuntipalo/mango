@@ -1,5 +1,10 @@
 import { IsNotEmpty } from 'class-validator';
 
+export enum OrderProblem {
+  OUT_OF_MANGO_PROBLEM = "มีมะม่วงไม่เพียงพอ",
+  LESS_THAN_7_MONTH_PROBLEM = "ระยะเวลาปลูกไม่เพียงพอ"
+}
+
 export enum OrderStatus {
   WAIT_PAY = 'รอการชำระเงิน',
   WAIT_CONFIRM = 'รอการยืนยัน',
