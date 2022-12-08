@@ -24,4 +24,3 @@ export class UserCollectionService {
     return (await this.usersCollection.doc(telephone).get()).data();
   }
 }
-

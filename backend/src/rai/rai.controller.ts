@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { RaiDto } from 'src/firebase/dto/rai.dto';
 import { RaiCollectionService } from 'src/firebase/usecase/rai-collection-service';
 
@@ -10,5 +10,11 @@ export class RaiController {
     @HttpCode(HttpStatus.CREATED)
     async createUser(@Body() rai: RaiDto): Promise<RaiDto> {
       return this.raiCollectionService.create(rai)
+    }
+
+    @Get("/getall")
+    @HttpCode(HttpStatus.CREATED)
+    async getAll(): Promise<RaiDto[]> {
+      return this.raiCollectionService.getAll()
     }
 }

@@ -10,4 +10,9 @@ export class OrderService {
     const orderUpdated = await this.planService.findRai(order, false)
     return this.orderCollectionService.update(orderUpdated)
   }
+
+  async findRaiForOrderWithConfirm(order: OrderDto): Promise<any> {
+    const orderUpdated = await this.planService.findRai(order, true)
+    return this.orderCollectionService.update(orderUpdated)
+  }
 }

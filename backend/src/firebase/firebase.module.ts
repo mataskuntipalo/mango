@@ -8,6 +8,7 @@ import {
 import { UserCollectionService } from './usecase/user-collection-service';
 import { OrderCollectionService } from './usecase/order-collection-service';
 import { RaiCollectionService } from './usecase/rai-collection-service';
+import { PlanCollectionService } from './usecase/plan-collection-service';
 
 type FirestoreModuleOptions = {
   imports: any[];
@@ -43,6 +44,7 @@ export class FiresbaseModule {
         UserCollectionService,
         OrderCollectionService,
         RaiCollectionService,
+        PlanCollectionService,
         optionsProvider,
         dbProvider,
         ...collectionProviders,
@@ -51,6 +53,7 @@ export class FiresbaseModule {
         UserCollectionService,
         OrderCollectionService,
         RaiCollectionService,
+        PlanCollectionService,
         dbProvider,
         ...collectionProviders,
       ],

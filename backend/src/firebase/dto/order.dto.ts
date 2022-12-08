@@ -2,7 +2,8 @@ import { IsNotEmpty } from 'class-validator';
 
 export enum OrderProblem {
   OUT_OF_MANGO_PROBLEM = "มีมะม่วงไม่เพียงพอ",
-  LESS_THAN_7_MONTH_PROBLEM = "ระยะเวลาปลูกไม่เพียงพอ"
+  LESS_THAN_7_MONTH_PROBLEM = "ระยะเวลาปลูกไม่เพียงพอ",
+  NO_RAI_PROBLEM = "ไม่มีผลผลิตในช่วงเวลาที่สั่ง"
 }
 
 export enum OrderStatus {
@@ -30,9 +31,9 @@ export class OrderDto {
   address: string;
   telephone: string;
   orderDate: string;
-  recevieDate: string;
+  recevieDate?: string;
   weight: number;
-  totalPrice: number;
+  totalPrice?: number;
   rais?: OrderRais[];
   isProblem?: boolean;
   problem?: string;

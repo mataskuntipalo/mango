@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from '@material-ui/core/styles';
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 
 import './utils/i18n';
 import './index.css';
@@ -13,10 +13,10 @@ import createMyTheme from './styles';
 const theme = createMyTheme();
 ReactDOM.render(
   <ThemeProvider theme={theme}>
-    <HashRouter>
+    <BrowserRouter>
       <CssBaseline />
       <App />
-    </HashRouter>
+    </BrowserRouter>
   </ThemeProvider>,
   document.getElementById('root')
 );

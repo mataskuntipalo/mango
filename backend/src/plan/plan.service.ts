@@ -7,29 +7,34 @@ import {
   OrderStatus,
 } from 'src/firebase/dto/order.dto';
 import { RaiDto } from 'src/firebase/dto/rai.dto';
+import { PlanCollectionService } from 'src/firebase/usecase/plan-collection-service';
 import { RaiCollectionService } from 'src/firebase/usecase/rai-collection-service';
 
 @Injectable()
 export class PlanService {
   // private logger: Logger = new Logger(RawReadingsService.name);
 
-  constructor(private raiCollectionService: RaiCollectionService) {}
+  constructor(private raiCollectionService: RaiCollectionService, private planCollectionService: PlanCollectionService) {}
   private today = moment();
   async findRai(order: OrderDto, isConfirm: boolean): Promise<OrderDto> {
     const rais: RaiDto[] = await this.raiCollectionService.getAll();
-    let totalCapacity = 0;
-    rais.forEach((rai) => {
-      totalCapacity = totalCapacity + rai.remainingWeight;
-    });
-    if (totalCapacity < order.weight) {
-      order.isProblem = true;
-      order.problem =
-        OrderProblem.OUT_OF_MANGO_PROBLEM +
-        `/ หามะม่วงมาเพิ่ม ${order.weight} kg`;
-      order.orderStatus = OrderStatus.WAIT_CONFIRM;
-      return order;
-    }
+    console.log('rais: ', rais);
+
+    // let totalCapacity = 0;
+    // rais.forEach((rai) => {
+    //   totalCapacity = totalCapacity + rai.remainingWeight;
+    // });
+    // if (totalCapacity < order.weight) {
+    //   order.isProblem = true;
+    //   order.problem =
+    //     OrderProblem.OUT_OF_MANGO_PROBLEM +
+    //     `/ หามะม่วงมาเพิ่ม ${order.weight} kg`;
+    //   order.orderStatus = OrderStatus.WAIT_CONFIRM;
+    //   return order;
+    // }
+
     let updatedRais = [];
+    order.rais = []
     let freeRaisWithStartPlanting = rais.filter(
       (rai) => rai.isFull === false && rai.startDate != null,
     );
@@ -42,21 +47,21 @@ export class PlanService {
     console.log('filterRaiByEndDate: ', filterRaiByEndDate);
     let remainingOrderWeight = order.weight;
     // step 1 ใส่ในไร่ที่มีเริ่มแล้วและวันที่ออกผลตรงกันให้หมดก่อน
+    console.log()
     filterRaiByEndDate
       .sort((a, b) => a.remainingWeight - b.remainingWeight)
       .every((rai) => {
         if (remainingOrderWeight === 0) return false;
         let sum = rai.orderWeight + remainingOrderWeight;
-        if (sum > rai.estimateWeight) {
-          //ไร่นี้ใส่ไม่พอทั้ง order
+        if (remainingOrderWeight > rai.remainingWeight) { //ไร่นี้ใส่ไม่พอทั้ง order
           order.rais.push({
             raiId: rai.id,
             raiName: rai.name,
-            weight: rai.estimateWeight - rai.orderWeight,
+            weight: rai.remainingWeight,
           } as OrderRais);
           rai.orderWeight = rai.estimateWeight;
-          rai.remainingWeight = 0;
           remainingOrderWeight = remainingOrderWeight - rai.remainingWeight;
+          rai.remainingWeight = 0;
         } else {
           rai.orderWeight = rai.orderWeight + remainingOrderWeight;
           rai.remainingWeight = rai.estimateWeight - rai.orderWeight;
@@ -71,32 +76,32 @@ export class PlanService {
         updatedRais.push(rai);
         return true;
       });
-    console.log('updatedRais0: ', updatedRais);
 
     if (remainingOrderWeight === 0) {
-      await this.raiCollectionService.updateBatch(updatedRais);
+      //await this.raiCollectionService.updateBatch(updatedRais);
+      this.updateRai(updatedRais)
       order.orderStatus = OrderStatus.CONFIRMED;
       return order;
     }
     // step 2 เปิดไร่ใหม่
     let freeRais = rais.filter(
-      (rai) => rai.isFull === false && rai.startDate == null,
+      (rai) => rai.isFull == false && rai.startDate == null,
     );
+
     const compareMonth = moment(order.recevieDate).diff(this.today, 'months');
-    console.log('compareMonth: ', compareMonth);
     if (compareMonth >= 7 || isConfirm === true) {
-      freeRais.every((rai) => {
+      freeRais.every(async (rai) => {
         if (remainingOrderWeight === 0) return false;
         if (remainingOrderWeight > rai.estimateWeight) {
           //ไร่นี้ใส่ไม่พอทั้ง order
-          rai.orderWeight = rai.estimateWeight;
-          rai.remainingWeight = 0;
-          remainingOrderWeight = remainingOrderWeight - rai.estimateWeight;
           order.rais.push({
             raiId: rai.id,
             raiName: rai.name,
-            weight: rai.estimateWeight,
+            weight: rai.remainingWeight,
           } as OrderRais);
+          rai.orderWeight = rai.estimateWeight;
+          remainingOrderWeight = remainingOrderWeight - rai.remainingWeight;
+          rai.remainingWeight = 0;
         } else {
           rai.orderWeight = remainingOrderWeight;
           rai.remainingWeight = rai.estimateWeight - remainingOrderWeight;
@@ -104,55 +109,43 @@ export class PlanService {
           order.rais.push({
             raiId: rai.id,
             raiName: rai.name,
-            weight: rai.orderWeight,
+            weight: order.weight,
           } as OrderRais);
-          //this.createPlan(rai, order)
+          await this.createPlan(order,rai)
         }
-        console.log('rai.remainingWeight: ', rai.remainingWeight === 0);
         if (rai.remainingWeight === 0) rai.isFull = true;
         updatedRais.push(rai);
         return true;
       });
     } else {
       order.isProblem = true;
+      order.orderStatus = OrderStatus.WAIT_CONFIRM;
       order.problem = OrderProblem.LESS_THAN_7_MONTH_PROBLEM;
       return order;
     }
-    console.log('updatedRais1: ', updatedRais);
     if (remainingOrderWeight != 0) {
       order.isProblem = true;
       order.problem = `หามะม่วงมาเพิ่ม ${remainingOrderWeight} kg`;
     }
     order.orderStatus = OrderStatus.CONFIRMED;
-    await this.raiCollectionService.updateBatch(updatedRais);
+    //await this.raiCollectionService.updateBatch(updatedRais);
+    this.updateRai(updatedRais)
+    if(updatedRais.length == 0){
+      order.isProblem = true;
+      order.orderStatus = OrderStatus.WAIT_CONFIRM;
+      order.problem = OrderProblem.NO_RAI_PROBLEM;
+    } 
     return order;
   }
 
-  async createPlan() {
-    const order = {
-      name: 'Matas',
-      orderStatus: OrderStatus.CONFIRMED,
-      slipURL: 'url',
-      address: 'string',
-      telephone: '15555',
-      orderDate: '2022-12-01',
-      recevieDate: '2023-12-30',
-      weight: 200,
-      totalPrice: 1000,
-      orderId: 'ah7FJC',
-    } as OrderDto;
-    const rai = {
-      id: 'rai1',
-      name: 'rai1',
-      estimateWeight: 750,
-      isFull: false,
-      orderWeight: 0,
-      remainingWeight: 750,
-      startDate: null,
-      endDate: { start: null, end: null },
-    } as RaiDto;
-    rai.startDate = this.today.format('yyyy-MM-DD');
-    const watering = 'รดน้ำ';
+  async updateRai(rais: any){
+    rais.forEach(async rai => {
+      await this.raiCollectionService.update(rai);
+    })
+  }
+
+  async createPlan(order: OrderDto, rai: RaiDto) {
+    // const watering = 'รดน้ำ';
     const plan = [
       {
         activities: [
@@ -364,20 +357,24 @@ export class PlanService {
         day: 210,
       },
     ];
-
+    const startDatePlan = moment(order.recevieDate).subtract(7, 'months').format('yyyy-MM-DD');
     let editPlan = plan;
-    console.log("fff: ", moment(order.recevieDate).subtract(2, 'days').diff(this.today, 'months'))
     if (moment(order.recevieDate).subtract(2, 'days').diff(this.today, 'months') <7) {
-        console.log("no in")
-      const startDatePlan = moment(order.recevieDate).subtract(7, 'months');
       const dayInNomalPlan = this.today.diff(startDatePlan, 'days');
       editPlan = plan.filter((process) => process.day >= dayInNomalPlan);
     }
     let finalPlan = {};
-    editPlan.forEach((process) => {
-      const dayKey = moment().add(process.day, 'days').format('yyyy-MM-DD');
+    editPlan.forEach((process,index) => {
+      const temp = startDatePlan
+      const dayKey = moment(temp).add(process.day, 'days').format('yyyy-MM-DD');
+      process["date"] = dayKey
       finalPlan[dayKey] = process;
+      if(index === 0) rai.startDate = dayKey
+      if(process.day === 210) rai.endDate = {start:moment(dayKey).subtract(5, "days").format('yyyy-MM-DD'), end:moment(dayKey).add(5, "days").format('yyyy-MM-DD')}
     });
+    finalPlan["raiName"] = rai.name
+    await this.raiCollectionService.update(rai)
+    await this.planCollectionService.create(finalPlan)
     return finalPlan;
   }
 }

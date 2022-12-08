@@ -29,4 +29,17 @@ export class OrderCollectionService {
     await orderRef.set(order);
     return order;
   }
+
+  async getOrderByUser(userId: string): Promise<OrderDto[]> {
+    const orders = await this.orderCollection.where('userId', '==', userId).get();
+    if (orders.empty) {
+      console.log('No matching documents.');
+      return;
+    }  
+    let result = []
+    orders.forEach(doc => {
+      result.push(doc.data());
+    });
+    return result;
+  }
 }

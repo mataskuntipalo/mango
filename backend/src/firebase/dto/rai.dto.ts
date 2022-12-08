@@ -8,7 +8,7 @@ export class RaiDto {
   orderWeight : number
   remainingWeight: number
   startDate: string
-  endDate: {start: Date, end: Date}
+  endDate: {start: string, end: string}
   actualWeight: number
   cycle: number
 }
